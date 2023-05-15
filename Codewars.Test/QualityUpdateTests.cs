@@ -23,31 +23,82 @@ public class QualityUpdateTests
     [ClassData(typeof(TestItemGenerator))]
     public void QualityOfAnItem_ShouldBeUpdated_AsDaysPasses(MyItem item, MyItem expectedItem)
     {
-        MyItem updatedItem = item.Update();
+        ItemUpdater itemUpdater = new ItemUpdater();
+        MyItem updatedItem = itemUpdater.Update(item);
         Assert.Equal(expectedItem, updatedItem);
     }
 }
 
+public class ItemUpdater
+{
+    private readonly List<IUpdateRule> _updateRules;
+    public ItemUpdater() : this(new List<IUpdateRule>
+    {
+        new RegularItemRule(),
+        new SellTimeExpiredRule(),
+        new GetsBetterAsTimePassesRule(),
+    }) { }
+    
+    public ItemUpdater(List<IUpdateRule> updateRules)
+    {
+        _updateRules = updateRules;
+    }
+
+    public MyItem Update(MyItem item) => item.Update(_updateRules);
+}
+
 public record MyItem(string Name, int SellIn, Quality Quality)
 {
-    public MyItem Update()
+    public MyItem Update(List<IUpdateRule> updateRules)
     {
-        int updatedSellIn = SellIn - 1;
-        int qualityUpdate = -1;
-        if (updatedSellIn < 0)
-        {
-            qualityUpdate *= 2;
-        }
-
-        if (Name.Contains("Aged Brie"))
-        {
-            qualityUpdate = 1;
-        }
+        var itemSellInUpdated = UpdateSellIn();
+        var qualityUpdate = UpdateQuality(itemSellInUpdated, updateRules);
 
         var updatedQuality = Quality.UpdateBy(qualityUpdate);
-        return new(Name, updatedSellIn, updatedQuality);
+        return new(Name, itemSellInUpdated.SellIn, updatedQuality);
     }
+
+    private static int UpdateQuality(MyItem itemSellInUpdated, List<IUpdateRule> rules) =>
+        rules
+            .Aggregate(0, (current, rule) => rule.GetQualityValue(itemSellInUpdated, current));
+
+    private MyItem UpdateSellIn() => 
+        this with { SellIn = SellIn - 1 };
 
     public static MyItem Of(string name, int sellIn, int quality) => 
         new(name, sellIn, Quality.Of(quality));
+}
+
+public class RegularItemRule : IUpdateRule
+{
+    public int GetQualityValue(MyItem updatedSellIn, int qualityUpdate) => -1;
+}
+
+public class GetsBetterAsTimePassesRule : IUpdateRule
+{
+    public int GetQualityValue(MyItem item, int qualityUpdate)
+    {
+        if (item.Name.Contains("Aged Brie"))
+        {
+            qualityUpdate = 1;
+        }
+        return qualityUpdate;
+    }
+}
+
+public interface IUpdateRule
+{
+    public int GetQualityValue(MyItem updatedSellIn, int qualityUpdate);
+}
+
+public class SellTimeExpiredRule : IUpdateRule
+{
+    public int GetQualityValue(MyItem item, int qualityUpdate)
+    {
+        if (item.SellIn < 0)
+        {
+            qualityUpdate *= 2;
+        }
+        return qualityUpdate;
+    }
 }
