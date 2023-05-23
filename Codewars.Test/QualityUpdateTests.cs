@@ -35,7 +35,8 @@ public class ItemUpdater
     private readonly List<IUpdateRule> _updateRules;
     public ItemUpdater() : this(new List<IUpdateRule>
     {
-        new GetsBetterAsTimePassesRule(),
+        new NamePatternRule("Sulfuras", 0, 0),
+        new NamePatternRule("Aged Brie", -1, 1),
         new SellTimeExpiredRule(new RegularItemRule()),
     }) { }
     
@@ -60,7 +61,6 @@ public record MyItem(string Name, int SellIn, Quality Quality)
 
 public class RegularItemRule : IUpdateRule
 {
-    public int GetQualityValue(MyItem updatedSellIn, int qualityUpdate) => -1;
     public bool Match(MyItem myItem) => true;
     public MyItem UpdateItem(MyItem myItem) => 
         new (myItem.Name, myItem.SellIn - 1, myItem.Quality.UpdateBy(-1));
@@ -68,29 +68,30 @@ public class RegularItemRule : IUpdateRule
     public int QualityValue => -1;
 }
 
-public class GetsBetterAsTimePassesRule : IUpdateRule
+public class NamePatternRule : IUpdateRule
 {
-    public int GetQualityValue(MyItem item, int qualityUpdate)
+    private readonly string _patternToMatch;
+    private readonly int _sellInUpdate;
+
+    public NamePatternRule(string patternToMatch, int sellInUpdate, int qualityValue)
     {
-        if (Match(item))
-        {
-            qualityUpdate = 1;
-        }
-        return qualityUpdate;
+        _patternToMatch = patternToMatch;
+        _sellInUpdate = sellInUpdate;
+        QualityValue = qualityValue;
     }
 
+    public int QualityValue { get; }
+
     public bool Match(MyItem myItem) => 
-        myItem.Name.Contains("Aged Brie");
+        myItem.Name.Contains(_patternToMatch);
 
     public MyItem UpdateItem(MyItem myItem) => 
-        new (myItem.Name, myItem.SellIn - 1, myItem.Quality.UpdateBy(1));
+        new (myItem.Name, myItem.SellIn + (_sellInUpdate), myItem.Quality.UpdateBy(QualityValue));
 
-    public int QualityValue => 1;
 }
 
 public interface IUpdateRule
 {
-    public int GetQualityValue(MyItem updatedSellIn, int qualityUpdate);
     bool Match(MyItem myItem);
     MyItem UpdateItem(MyItem myItem);
     int QualityValue { get; }
@@ -103,15 +104,6 @@ public class SellTimeExpiredRule : IUpdateRule
     public SellTimeExpiredRule(IUpdateRule innerRule)
     {
         _innerRule = innerRule;
-    }
-
-    public int GetQualityValue(MyItem item, int qualityUpdate)
-    {
-        if (item.SellIn < 0)
-        {
-            qualityUpdate *= 2;
-        }
-        return qualityUpdate;
     }
 
     public bool Match(MyItem myItem) => _innerRule.Match(myItem);
