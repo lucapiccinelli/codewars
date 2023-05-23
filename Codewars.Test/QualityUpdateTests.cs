@@ -16,7 +16,8 @@ public class QualityUpdateTests
             yield return new object[] { MyItem.Of("Banana. Conjured", 10, 6), MyItem.Of("Banana. Conjured", 9, 4) };
             yield return new object[] { MyItem.Of("Banana. Conjured", 0, 6), MyItem.Of("Banana. Conjured", -1, 2) };
             yield return new object[] { MyItem.Of("Aged Brie", 10, 5), MyItem.Of("Aged Brie", 9, 6) };
-            yield return new object[] { MyItem.Of("Sulfuras", 10, 40), MyItem.Of("Sulfuras", 10, 40) };
+            yield return new object[] { MyItem.Of("Aged Brie", 10, 5), MyItem.Of("Aged Brie", 9, 6) };
+            yield return new object[] { MyItem.Sulfuras(10), MyItem.Of("Sulfuras", 10, Quality.Of(80, 0, 80)) };
             yield return new object[] { MyItem.Of("Backstage passes", 12, 15), MyItem.Of("Backstage passes", 11, 16) };
             yield return new object[] { MyItem.Of("Backstage passes", 11, 15), MyItem.Of("Backstage passes", 10, 17) };
             yield return new object[] { MyItem.Of("Backstage passes", 6, 15), MyItem.Of("Backstage passes", 5, 18) };

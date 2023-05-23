@@ -6,7 +6,7 @@ public record Quality
     private readonly int _upperBound;
     public int Value { get; }
 
-    private Quality(int value, int lowerBound = 0, int upperBound = 50)
+    private Quality(int value, int lowerBound, int upperBound)
     {
         _lowerBound = lowerBound;
         _upperBound = upperBound;
@@ -18,7 +18,7 @@ public record Quality
         if (qualityValue < lowerBound || qualityValue > upperBound) 
             throw new ArgumentException($"qualityValue should not be less the {lowerBound} and more than {upperBound}");
         
-        return new Quality(qualityValue);
+        return new Quality(qualityValue, lowerBound, upperBound);
     }
     
     public Quality UpdateBy(int qualityUpdate)
@@ -28,7 +28,6 @@ public record Quality
         {
             qualityValue = 0;
         }
-        Quality updatedQuality = Of(qualityValue, _lowerBound, _upperBound);
-        return updatedQuality;
+        return Of(qualityValue, _lowerBound, _upperBound);
     }
 }
