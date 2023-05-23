@@ -12,6 +12,8 @@ public class QualityUpdateTests
             yield return new object[] { MyItem.Of("Banana", 10, 5), MyItem.Of("Banana", 9, 4) };
             yield return new object[] { MyItem.Of("Banana", 0, 5), MyItem.Of("Banana", -1, 3) };
             yield return new object[] { MyItem.Of("Banana", 10, 0), MyItem.Of("Banana", 9, 0) };
+            yield return new object[] { MyItem.Of("Banana. Conjured", 10, 6), MyItem.Of("Banana. Conjured", 9, 4) };
+            yield return new object[] { MyItem.Of("Banana. Conjured", 0, 6), MyItem.Of("Banana. Conjured", -1, 2) };
             yield return new object[] { MyItem.Of("Aged Brie", 10, 5), MyItem.Of("Aged Brie", 9, 6) };
             yield return new object[] { MyItem.Of("Sulfuras", 10, 40), MyItem.Of("Sulfuras", 10, 40) };
             yield return new object[] { MyItem.Of("Backstage passes", 12, 15), MyItem.Of("Backstage passes", 11, 16) };
@@ -42,6 +44,7 @@ public class ItemUpdater
         new NamePatternRule("Sulfuras", 0, 0),
         new NamePatternRule("Aged Brie", -1, 1),
         new FomoRule(new NamePatternRule("Backstage passes", -1, 1)),
+        new SellTimeExpiredRule(new NamePatternRule("Conjured", -1, -2)),
         new SellTimeExpiredRule(new RegularItemRule()),
     }) { }
     
