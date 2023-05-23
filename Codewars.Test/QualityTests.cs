@@ -9,6 +9,6 @@ public class QualityTests
     [InlineData(51)]
     public void QualityConstraintsTest(int qualityValue)
     {
-        Assert.Throws<ArgumentException>(() => Quality.Of(qualityValue));
+        Assert.Throws<ArgumentException>(() => Quality.Of(qualityValue, 0, 50));
     }
 }
