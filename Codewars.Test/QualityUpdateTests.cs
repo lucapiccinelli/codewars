@@ -14,6 +14,10 @@ public class QualityUpdateTests
             yield return new object[] { MyItem.Of("Banana", 10, 0), MyItem.Of("Banana", 9, 0) };
             yield return new object[] { MyItem.Of("Aged Brie", 10, 5), MyItem.Of("Aged Brie", 9, 6) };
             yield return new object[] { MyItem.Of("Sulfuras", 10, 40), MyItem.Of("Sulfuras", 10, 40) };
+            yield return new object[] { MyItem.Of("Backstage passes", 12, 15), MyItem.Of("Backstage passes", 11, 16) };
+            yield return new object[] { MyItem.Of("Backstage passes", 11, 15), MyItem.Of("Backstage passes", 10, 17) };
+            yield return new object[] { MyItem.Of("Backstage passes", 6, 15), MyItem.Of("Backstage passes", 5, 18) };
+            yield return new object[] { MyItem.Of("Backstage passes", 1, 15), MyItem.Of("Backstage passes", 0, 0) };
         }
 
         IEnumerator IEnumerable.GetEnumerator() 
@@ -37,6 +41,7 @@ public class ItemUpdater
     {
         new NamePatternRule("Sulfuras", 0, 0),
         new NamePatternRule("Aged Brie", -1, 1),
+        new FomoRule(new NamePatternRule("Backstage passes", -1, 1)),
         new SellTimeExpiredRule(new RegularItemRule()),
     }) { }
     
@@ -46,6 +51,37 @@ public class ItemUpdater
     }
 
     public MyItem Update(MyItem item) => item.Update(_updateRules);
+}
+
+public class FomoRule : IUpdateRule
+{
+    private readonly IUpdateRule _innerRule;
+
+    public FomoRule(IUpdateRule innerRule)
+    {
+        _innerRule = innerRule;
+    }
+
+    public bool Match(MyItem myItem) => 
+        _innerRule.Match(myItem);
+
+    public MyItem UpdateItem(MyItem myItem)
+    {
+        MyItem updatedItem = _innerRule.UpdateItem(myItem);
+        return updatedItem.SellIn switch
+        {
+            <= 0 => updatedItem with { Quality = Quality.Of(0) },
+            <= 5 => UpdateQuality(myItem, updatedItem, 3),
+            <= 10 => UpdateQuality(myItem, updatedItem, 2),
+            _ => updatedItem
+        };
+
+    }
+
+    private MyItem UpdateQuality(MyItem myItem, MyItem updatedItem, int multiplier) => 
+        updatedItem with { Quality = myItem.Quality.UpdateBy(_innerRule.QualityValue * multiplier) };
+
+    public int QualityValue => _innerRule.QualityValue;
 }
 
 public record MyItem(string Name, int SellIn, Quality Quality)
