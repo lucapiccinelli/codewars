@@ -13,6 +13,7 @@ public class QualityUpdateTests
             yield return new object[] { MyItem.Of("Banana", 0, 5), MyItem.Of("Banana", -1, 3) };
             yield return new object[] { MyItem.Of("Banana", 10, 0), MyItem.Of("Banana", 9, 0) };
             yield return new object[] { MyItem.Of("Aged Brie", 10, 5), MyItem.Of("Aged Brie", 9, 6) };
+            yield return new object[] { MyItem.Of("Sulfuras", 10, 40), MyItem.Of("Sulfuras", 10, 40) };
         }
 
         IEnumerator IEnumerable.GetEnumerator() 
@@ -34,9 +35,8 @@ public class ItemUpdater
     private readonly List<IUpdateRule> _updateRules;
     public ItemUpdater() : this(new List<IUpdateRule>
     {
-        new RegularItemRule(),
-        new SellTimeExpiredRule(),
         new GetsBetterAsTimePassesRule(),
+        new SellTimeExpiredRule(new RegularItemRule()),
     }) { }
     
     public ItemUpdater(List<IUpdateRule> updateRules)
@@ -49,21 +49,10 @@ public class ItemUpdater
 
 public record MyItem(string Name, int SellIn, Quality Quality)
 {
-    public MyItem Update(List<IUpdateRule> updateRules)
-    {
-        var itemSellInUpdated = UpdateSellIn();
-        var qualityUpdate = UpdateQuality(itemSellInUpdated, updateRules);
-
-        var updatedQuality = Quality.UpdateBy(qualityUpdate);
-        return new(Name, itemSellInUpdated.SellIn, updatedQuality);
-    }
-
-    private static int UpdateQuality(MyItem itemSellInUpdated, List<IUpdateRule> rules) =>
-        rules
-            .Aggregate(0, (current, rule) => rule.GetQualityValue(itemSellInUpdated, current));
-
-    private MyItem UpdateSellIn() => 
-        this with { SellIn = SellIn - 1 };
+    public MyItem Update(List<IUpdateRule> updateRules) =>
+        updateRules
+            .First(rule => rule.Match(this))
+            .UpdateItem(this);
 
     public static MyItem Of(string name, int sellIn, int quality) => 
         new(name, sellIn, Quality.Of(quality));
@@ -72,27 +61,50 @@ public record MyItem(string Name, int SellIn, Quality Quality)
 public class RegularItemRule : IUpdateRule
 {
     public int GetQualityValue(MyItem updatedSellIn, int qualityUpdate) => -1;
+    public bool Match(MyItem myItem) => true;
+    public MyItem UpdateItem(MyItem myItem) => 
+        new (myItem.Name, myItem.SellIn - 1, myItem.Quality.UpdateBy(-1));
+
+    public int QualityValue => -1;
 }
 
 public class GetsBetterAsTimePassesRule : IUpdateRule
 {
     public int GetQualityValue(MyItem item, int qualityUpdate)
     {
-        if (item.Name.Contains("Aged Brie"))
+        if (Match(item))
         {
             qualityUpdate = 1;
         }
         return qualityUpdate;
     }
+
+    public bool Match(MyItem myItem) => 
+        myItem.Name.Contains("Aged Brie");
+
+    public MyItem UpdateItem(MyItem myItem) => 
+        new (myItem.Name, myItem.SellIn - 1, myItem.Quality.UpdateBy(1));
+
+    public int QualityValue => 1;
 }
 
 public interface IUpdateRule
 {
     public int GetQualityValue(MyItem updatedSellIn, int qualityUpdate);
+    bool Match(MyItem myItem);
+    MyItem UpdateItem(MyItem myItem);
+    int QualityValue { get; }
 }
 
 public class SellTimeExpiredRule : IUpdateRule
 {
+    private readonly IUpdateRule _innerRule;
+
+    public SellTimeExpiredRule(IUpdateRule innerRule)
+    {
+        _innerRule = innerRule;
+    }
+
     public int GetQualityValue(MyItem item, int qualityUpdate)
     {
         if (item.SellIn < 0)
@@ -101,4 +113,16 @@ public class SellTimeExpiredRule : IUpdateRule
         }
         return qualityUpdate;
     }
+
+    public bool Match(MyItem myItem) => _innerRule.Match(myItem);
+
+    public MyItem UpdateItem(MyItem myItem)
+    {
+        MyItem updatedItem = _innerRule.UpdateItem(myItem);
+        return updatedItem.SellIn < 0
+            ? updatedItem with { Quality = myItem.Quality.UpdateBy(_innerRule.QualityValue * 2) }
+            : updatedItem;
+    }
+
+    public int QualityValue => _innerRule.QualityValue;
 }
