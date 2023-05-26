@@ -10,9 +10,12 @@ public class ItemUpdater
     {
         new NamePatternRule("Sulfuras", 0, 0),
         new NamePatternRule("Aged Brie", -1, 1),
-        new FomoRule(new NamePatternRule("Backstage passes", -1, 1)),
-        new SellTimeRule(new NamePatternRule("Conjured", -1, -2)),
-        new SellTimeRule(new RegularItemRule()),
+        new NamePatternRule("Backstage passes", -1, 1)
+            .SellTime(10, 2)
+            .SellTime(5, 3)
+            .SellTime(0, (updatedItem, _, _) => updatedItem with { Quality = Quality.Of(0) }),
+        new NamePatternRule("Conjured", -1, -2).SellTime(),
+        new RegularItemRule().SellTime(),
     }) { }
     
     public ItemUpdater(List<IUpdateRule> updateRules)
