@@ -17,7 +17,7 @@ public class FomoRule : IUpdateRule
         MyItem updatedItem = _innerRule.UpdateItem(myItem);
         return updatedItem.SellIn switch
         {
-            <= 0 => updatedItem with { Quality = Quality.Of(0, 0, 50) },
+            <= 0 => updatedItem with { Quality = Quality.Of(0) },
             <= 5 => UpdateQuality(myItem, updatedItem, 3),
             <= 10 => UpdateQuality(myItem, updatedItem, 2),
             _ => updatedItem

@@ -5,7 +5,7 @@ namespace Codewars.Domain;
 public record MyItem(string Name, int SellIn, Quality Quality)
 {
     public static MyItem Sulfuras(int sellIn) => 
-        new MyItem("Sulfuras", sellIn, Quality.Of(80, 0, 80));
+        new("Sulfuras", sellIn, Quality.Of(80, 0, 80));
 
     public MyItem Update(List<IUpdateRule> updateRules) =>
         updateRules

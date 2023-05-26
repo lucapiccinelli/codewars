@@ -143,3 +143,5 @@ BundleArtifacts
 #UposEmulator.Tests
 !**/SimReg.log
 !**/SimRegStorno.log
+
+.idea/
