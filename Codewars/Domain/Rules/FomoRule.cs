@@ -6,27 +6,18 @@ public class FomoRule : IUpdateRule
 
     public FomoRule(IUpdateRule innerRule)
     {
-        _innerRule = innerRule;
+        _innerRule =
+            new SellTimeRule(
+                new SellTimeRule(
+                    new SellTimeRule(innerRule, 10, 2), 5, 3),
+    (updatedItem, _, _) => updatedItem with { Quality = Quality.Of(0) }, 0
+            );
     }
 
     public bool Match(MyItem myItem) => 
         _innerRule.Match(myItem);
 
-    public MyItem UpdateItem(MyItem myItem)
-    {
-        MyItem updatedItem = _innerRule.UpdateItem(myItem);
-        return updatedItem.SellIn switch
-        {
-            <= 0 => updatedItem with { Quality = Quality.Of(0) },
-            <= 5 => UpdateQuality(myItem, updatedItem, 3),
-            <= 10 => UpdateQuality(myItem, updatedItem, 2),
-            _ => updatedItem
-        };
-
-    }
-
-    private MyItem UpdateQuality(MyItem myItem, MyItem updatedItem, int multiplier) => 
-        updatedItem with { Quality = myItem.Quality.UpdateBy(_innerRule.QualityValue * multiplier) };
+    public MyItem UpdateItem(MyItem myItem) => _innerRule.UpdateItem(myItem);
 
     public int QualityValue => _innerRule.QualityValue;
 }
