@@ -23,5 +23,7 @@ public class ItemUpdater
         _updateRules = updateRules;
     }
 
-    public MyItem Update(MyItem item) => item.Update(_updateRules);
+    public MyItem Update(MyItem item) => _updateRules
+        .First(rule => rule.Match(item))
+        .UpdateItem(item);
 }
